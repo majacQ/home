@@ -10,8 +10,40 @@ hr() {
     echo "${LINE}"
 }
 
-echo "Configure dock size"
-defaults write com.apple.dock tilesize -int 45 && killall Dock
+# The corresponding defaults keys can be discovered by running `defaults read`
+# and observing how the output changes after modifying system settings.
+
+echo "Configure keyboard"
+defaults write -g ApplePressAndHoldEnabled -bool true
+defaults write -g InitialKeyRepeat -int 10
+defaults write -g KeyRepeat -int 2
+
+hr
+
+echo "Configure trackpad"
+defaults write -g com.apple.trackpad.scaling -float 3
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults write com.apple.AppleMultitouchTrackpad FirstClickThreshold -int 2
+defaults write com.apple.AppleMultitouchTrackpad SecondClickThreshold -int 2
+
+hr
+
+echo "Configure mouse"
+defaults write -g com.apple.trackpad.scaling -float 2
+
+hr
+
+echo "Configure gestures"
+defaults write com.apple.dock showAppExposeGestureEnabled -bool true
+
+hr
+
+echo "Configure dock"
+defaults write com.apple.dock orientation -string left
+defaults write com.apple.dock tilesize -int 45
+defaults write com.apple.dock "show-recents" -bool false
+defaults write com.apple.dock "minimize-to-application" -bool true
+killall Dock
 
 hr
 
@@ -20,27 +52,37 @@ defaults write com.apple.desktopservices DSDontWriteNetworkStores true
 
 hr
 
-echo "Show hidden files in Finder"
-defaults write com.apple.Finder AppleShowAllFiles 1 && killall Finder
+echo "Show hidden files and extensions in Finder"
+defaults write com.apple.Finder AppleShowAllFiles -bool true
+defaults write -g AppleShowAllExtensions -bool true
+killall Finder
 
 hr
 
 echo "Set hibernate mode when using battery"
-sudo pmset -b hibernatemode 25
+sudo pmset -b hibernatemode 3
+
+hr
+
+echo "Disable swap, compress memory only"
+# Boot into recovery mode and run `csrutil disable`
+sudo nvram boot-args="vm_compressor=2"
 
 hr
 
 # Install Homebrew
 echo "Installing: brew"
 if ! type brew &>/dev/null; then
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
 hr
 
 declare -A BREW_PACKAGES
 BREW_PACKAGES=(
+    ["CMake"]="cmake"
     ["ExifTool"]="exiftool"
+    ["GNU File, Shell, and Text utilities"]="coreutils"
     ["GnuPG"]="gnupg"
     ["GraphicsMagick"]="graphicsmagick"
     ["htop"]="htop"
@@ -67,10 +109,8 @@ declare -A BREW_CASK_PACKAGES
 BREW_CASK_PACKAGES=(
     ["Autumn"]="autumn"
     ["Chromium"]="chromium"
-    ["Coconut Battery"]="coconutbattery"
     ["Discord"]="discord"
-    ["Docker"]="docker"
-    ["Fira Code font"]="font-fira-code"
+    ["Element"]="element"
     ["Firefox"]="firefox"
     ["Focus"]="focus"
     ["Google Chrome"]="google-chrome"
@@ -90,13 +130,13 @@ BREW_CASK_PACKAGES=(
 
 for PACKAGE in "${!BREW_CASK_PACKAGES[@]}"; do
     echo "Installing: $PACKAGE"
-    brew cask install ${BREW_CASK_PACKAGES[$PACKAGE]}
+    brew install --cask ${BREW_CASK_PACKAGES[$PACKAGE]}
 
     hr
 done
 
 echo "Disable swipe navigation gestures in Chrome"
-defaults write com.google.Chrome.plist AppleEnableSwipeNavigateWithScrolls -bool FALSE
+defaults write com.google.Chrome.plist AppleEnableSwipeNavigateWithScrolls -bool false
 
 hr
 
